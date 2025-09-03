@@ -17,18 +17,17 @@
   </form>
 
   <div id="result">
-    <textarea id="recognized-text" rows="3" placeholder="Zde se zobrazí promo kód, nebo ručně upravte/vyberte text..."></textarea><br>
+    <textarea id="recognized-text" rows="3" placeholder="Zde se zobrazí promo kódy, nebo ručně vyberte..."></textarea><br>
     <button id="use-code" disabled>Použít označený kód</button>
   </div>
 
   <script>
-    function najdiPromoKod(text) {
-      // Vzor: 10–13 znaků, minimálně jedno písmeno, žádná mezera
+    function najdiPromoKody(text) {
+      // Najdi všechny 10–13 znakové sekvence s písmeny i číslicemi
       const regex = /\b[A-Z0-9]{10,13}\b/g;
       const matches = text.toUpperCase().match(regex);
-      if (!matches) return null;
-      // Vrátí první řetězec, který obsahuje alespoň jedno písmeno
-      return matches.find(code => /[A-Z]/.test(code)) || null;
+      if (!matches) return [];
+      return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
     }
 
     document.getElementById('ocr-form').addEventListener('submit', function(e) {
@@ -46,13 +45,13 @@
       reader.onload = function() {
         Tesseract.recognize(reader.result, 'eng', { logger: m => console.log(m) })
           .then(({ data: { text } }) => {
-            const promo = najdiPromoKod(text);
-            if (promo) {
-              textarea.value = promo;
+            const promoKody = najdiPromoKody(text);
+            if (promoKody.length > 0) {
+              textarea.value = promoKody.join('\n');
               document.getElementById('use-code').disabled = false;
             } else {
-              textarea.value = text; // zobrazit celý text pro případný ruční výběr
-              alert('Automaticky se nepodařilo najít promo kód, vyberte jej prosím ručně.');
+              textarea.value = text;
+              alert('Automaticky se nepodařilo najít promo kód – označte nebo zkopírujte jej ručně.');
             }
           })
           .catch(err => {
@@ -65,7 +64,6 @@
 
     document.getElementById('use-code').addEventListener('click', function() {
       const textarea = document.getElementById('recognized-text');
-      // Pokud není vybrán text, použije celý obsah
       let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
       if (!selectedText) selectedText = textarea.value.trim();
       if (!selectedText) {
