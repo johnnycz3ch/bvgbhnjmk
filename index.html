@@ -91,7 +91,8 @@
         const formData = new FormData();
         formData.append('apikey', apiKey);
         formData.append('language', 'eng');
-        formData.append('file', resizedBlob);
+        // ↓↓↓ KLÍČOVÁ OPRAVA: přidání jména souboru s příponou ↓↓↓
+        formData.append('file', resizedBlob, 'image.jpg');
         formData.append('isOverlayRequired', 'false');
 
         fetch('https://api.ocr.space/parse/image', { method: 'POST', body: formData })
