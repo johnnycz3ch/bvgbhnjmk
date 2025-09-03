@@ -1,24 +1,59 @@
-<form id="upload-form">
-  <input type="file" id="image" required>
-  <button type="submit">Načti kód</button>
-</form>
-<div id="result"></div>
-<script>
-document.getElementById('upload-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const file = document.getElementById('image').files;
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('language', 'eng');
-  formData.append('isOverlayRequired', false);
-  const resp = await fetch('https://api.ocr.space/parse/image', {
-    method: 'POST',
-    headers: { apikey: 'K87964261688957' }, // veřejný testovací klíč, lze získat zdarma vlastní
-    body: formData
-  });
-  const data = await resp.json();
-  const code = data.ParsedResults.ParsedText.replace(/[^A-Z0-9]/g, '').toUpperCase();
-  document.getElementById('result').innerHTML = 
-    `<a href="https://store.pokemongo.com/offer-redemption?passcode=${code}" target="_blank">Přejít na odměnu s kódem: ${code}</a>`;
-});
-</script>
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>OCR promo kód s Tesseract.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <h2>Nahrajte fotku promo kódu</h2>
+  <form id="ocr-form">
+    <input type="file" id="image" accept="image/*" capture="environment" required>
+    <button type="submit">Přečti kód</button>
+  </form>
+
+  <div id="result" style="margin-top: 20px;">
+    <textarea id="recognized-text" rows="6" cols="60" placeholder="Zde se zobrazí rozpoznaný text..."></textarea><br>
+    <button id="use-code" disabled>Použít označený kód</button>
+  </div>
+
+  <script>
+    document.getElementById('ocr-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const file = document.getElementById('image').files[0];
+      if (!file) {
+        alert('Vyberte obrázek');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function() {
+        const textarea = document.getElementById('recognized-text');
+        textarea.value = "Načítám...";
+        Tesseract.recognize(reader.result, 'eng', {
+          logger: m => console.log(m)
+        }).then(({ data: { text } }) => {
+          textarea.value = text;
+          document.getElementById('use-code').disabled = false;
+        }).catch(err => {
+          textarea.value = "";
+          alert('Chyba při rozpoznávání textu: ' + err.message);
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('use-code').addEventListener('click', function() {
+      const textarea = document.getElementById('recognized-text');
+      const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+
+      if (!selectedText) {
+        alert('Prosím, označte promo kód v poli výše.');
+        return;
+      }
+
+      const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      window.open(`https://store.pokemongo.com/offer-redemption?passcode=${code}`, '_blank');
+    });
+  </script>
+</body>
+</html>
