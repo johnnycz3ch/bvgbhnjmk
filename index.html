@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>OCR promo kód s OCR.space API a zmenšením obrázku</title>
+  <title>OCR promo kód s OCR.space API a dynamickým zmenšením obrázku</title>
   <style>
     #recognized-text { width: 90%; margin-top: 10px; }
     #result { margin-top: 20px; }
@@ -24,7 +24,7 @@
     const textarea = document.getElementById('recognized-text');
     const useCodeButton = document.getElementById('use-code');
 
-    let apiKey = 'K87964261688957'; // Vložte svůj OCR.space API klíč sem
+    let apiKey = 'K87964261688957'; // Váš OCR.space API klíč
 
     fileInput.addEventListener('change', () => {
       uploadButton.disabled = !fileInput.files.length;
@@ -39,32 +39,40 @@
       return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
     }
 
-    function resizeImage(file, maxSizeMB, callback) {
+    // Dynamická komprese a škálování na <1MB
+    function compressResizeImage(file, maxSizeMB, callback) {
       const maxSizeBytes = maxSizeMB * 1024 * 1024;
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-          const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
+          let quality = 0.9;
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
 
-          // Poměrné zmenšení rozměrů pokud překračuje limit
-          let scaleFactor = 1;
-          if (file.size > maxSizeBytes) {
-            scaleFactor = Math.sqrt(maxSizeBytes / file.size);
-            width = Math.floor(width * scaleFactor);
-            height = Math.floor(height * scaleFactor);
+          function attemptCompress() {
+            canvas.width = width;
+            canvas.height = height;
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(blob => {
+              if (blob.size <= maxSizeBytes || (quality < 0.3 && width < 300)) {
+                callback(blob);
+              } else {
+                quality -= 0.1;
+                if (quality < 0.5) {
+                  width = Math.floor(width * 0.9);
+                  height = Math.floor(height * 0.9);
+                  quality = 0.9;
+                }
+                attemptCompress();
+              }
+            }, 'image/jpeg', quality);
           }
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob(function(blob) {
-            callback(blob);
-          }, 'image/jpeg', 0.8);
+          attemptCompress();
         };
         img.src = e.target.result;
       };
@@ -79,17 +87,14 @@
       textarea.value = 'Načítám...';
       useCodeButton.disabled = true;
 
-      resizeImage(fileInput.files[0], 1, function(resizedBlob) {
+      compressResizeImage(fileInput.files[0], 1, resizedBlob => {
         const formData = new FormData();
         formData.append('apikey', apiKey);
         formData.append('language', 'eng');
         formData.append('file', resizedBlob);
         formData.append('isOverlayRequired', 'false');
 
-        fetch('https://api.ocr.space/parse/image', {
-          method: 'POST',
-          body: formData,
-        })
+        fetch('https://api.ocr.space/parse/image', { method: 'POST', body: formData })
           .then(response => response.json())
           .then(result => {
             if (result.IsErroredOnProcessing) {
