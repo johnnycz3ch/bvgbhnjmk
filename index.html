@@ -1,36 +1,41 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>OCR promo kód s Tesseract.js</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <style>
     #recognized-text { width: 90%; }
     #result { margin-top: 20px; }
+    .instructions { font-size: 1em; margin-bottom: 1em; color: #222; }
   </style>
 </head>
 <body>
   <h2>Nahrajte fotku promo kódu</h2>
+  <div class="instructions">
+    Ideálně nahrajte <b>ostrou a dobře svícenou</b> fotku, kde je pouze promo kód v jednom řádku (žádný další text ani zbytek karty).<br>
+    Pokud se promo kód nevyplní správně, můžete jej v poli níže upravit nebo ručně zkopírovat správný.
+  </div>
   <form id="ocr-form">
-    <input type="file" id="image" accept="image/*" capture="environment" required>
+    <input type="file" id="image" accept="image/*" capture="environment" required />
     <button type="submit">Přečti kód</button>
   </form>
 
   <div id="result">
-    <textarea id="recognized-text" rows="3" placeholder="Zde se zobrazí promo kódy, nebo ručně vyberte..."></textarea><br>
+    <textarea id="recognized-text" rows="3" placeholder="Zde se zobrazí nalezené promo kódy, případně upravte nebo zadejte ručně..."></textarea><br />
     <button id="use-code" disabled>Použít označený kód</button>
   </div>
 
   <script>
     function najdiPromoKody(text) {
-      // Najdi všechny 10–13 znakové sekvence s písmeny i číslicemi
+      // Všechny 10–13 znakové sekvence, minimálně jedno písmeno a jedna číslice
       const regex = /\b[A-Z0-9]{10,13}\b/g;
       const matches = text.toUpperCase().match(regex);
       if (!matches) return [];
       return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
     }
 
-    document.getElementById('ocr-form').addEventListener('submit', function(e) {
+    document.getElementById('ocr-form').addEventListener('submit', function (e) {
       e.preventDefault();
       const file = document.getElementById('image').files[0];
       if (!file) {
@@ -38,31 +43,34 @@
         return;
       }
       const textarea = document.getElementById('recognized-text');
-      textarea.value = "Načítám...";
+      textarea.value = 'Načítám...';
       document.getElementById('use-code').disabled = true;
 
       const reader = new FileReader();
-      reader.onload = function() {
-        Tesseract.recognize(reader.result, 'eng', { logger: m => console.log(m) })
-          .then(({ data: { text } }) => {
-            const promoKody = najdiPromoKody(text);
-            if (promoKody.length > 0) {
-              textarea.value = promoKody.join('\n');
-              document.getElementById('use-code').disabled = false;
-            } else {
-              textarea.value = text;
-              alert('Automaticky se nepodařilo najít promo kód – označte nebo zkopírujte jej ručně.');
-            }
-          })
-          .catch(err => {
-            textarea.value = "";
-            alert('Chyba při rozpoznávání textu: ' + err.message);
-          });
+      reader.onload = function () {
+        Tesseract.recognize(reader.result, 'eng', {
+          logger: m => console.log(m),
+          tessedit_pageseg_mode: 7 // Režim: jeden řádek textu
+        })
+        .then(({ data: { text } }) => {
+          const promoKody = najdiPromoKody(text);
+          if (promoKody.length > 0) {
+            textarea.value = promoKody.join('\n');
+            document.getElementById('use-code').disabled = false;
+          } else {
+            textarea.value = text;
+            alert('Automaticky se nepodařilo najít promo kód – zkontrolujte a případně upravte ručně.');
+          }
+        })
+        .catch((err) => {
+          textarea.value = '';
+          alert('Chyba při rozpoznávání textu: ' + err.message);
+        });
       };
       reader.readAsDataURL(file);
     });
 
-    document.getElementById('use-code').addEventListener('click', function() {
+    document.getElementById('use-code').addEventListener('click', function () {
       const textarea = document.getElementById('recognized-text');
       let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
       if (!selectedText) selectedText = textarea.value.trim();
