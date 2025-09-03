@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>OCR promo kód s Tesseract.js</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+  <style>
+    #recognized-text { width: 90%; }
+    #result { margin-top: 20px; }
+  </style>
 </head>
 <body>
   <h2>Nahrajte fotku promo kódu</h2>
@@ -12,12 +16,19 @@
     <button type="submit">Přečti kód</button>
   </form>
 
-  <div id="result" style="margin-top: 20px;">
-    <textarea id="recognized-text" rows="6" cols="60" placeholder="Zde se zobrazí rozpoznaný text..."></textarea><br>
+  <div id="result">
+    <textarea id="recognized-text" rows="3" placeholder="Zde se zobrazí promo kód, nebo ručně upravte/vyberte text..."></textarea><br>
     <button id="use-code" disabled>Použít označený kód</button>
   </div>
 
   <script>
+    function findPromoCode(text) {
+      // Hledání nejpravděpodobnějšího promo kódu: 10-14 znaků A-Z nebo číslice
+      const regex = /\b[A-Z0-9]{10,14}\b/g;
+      const matches = text.toUpperCase().match(regex);
+      return matches ? matches[0] : null;
+    }
+
     document.getElementById('ocr-form').addEventListener('submit', function(e) {
       e.preventDefault();
       const file = document.getElementById('image').files[0];
@@ -25,32 +36,40 @@
         alert('Vyberte obrázek');
         return;
       }
+      const textarea = document.getElementById('recognized-text');
+      textarea.value = "Načítám...";
+      document.getElementById('use-code').disabled = true;
+
       const reader = new FileReader();
       reader.onload = function() {
-        const textarea = document.getElementById('recognized-text');
-        textarea.value = "Načítám...";
-        Tesseract.recognize(reader.result, 'eng', {
-          logger: m => console.log(m)
-        }).then(({ data: { text } }) => {
-          textarea.value = text;
-          document.getElementById('use-code').disabled = false;
-        }).catch(err => {
-          textarea.value = "";
-          alert('Chyba při rozpoznávání textu: ' + err.message);
-        });
+        Tesseract.recognize(reader.result, 'eng', { logger: m => console.log(m) })
+          .then(({ data: { text } }) => {
+            const promo = findPromoCode(text);
+            if (promo) {
+              textarea.value = promo;
+              document.getElementById('use-code').disabled = false;
+            } else {
+              textarea.value = text; // Zobrazit pro ruční výběr
+              alert('Automaticky se nepodařilo promo kód najít, prosím zkopírujte/vyberte jej ručně.');
+            }
+          })
+          .catch(err => {
+            textarea.value = "";
+            alert('Chyba při rozpoznávání textu: ' + err.message);
+          });
       };
       reader.readAsDataURL(file);
     });
 
     document.getElementById('use-code').addEventListener('click', function() {
       const textarea = document.getElementById('recognized-text');
-      const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
-
+      // Pokud je něco vybráno, použijeme výběr, jinak celý obsah
+      let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+      if (!selectedText) selectedText = textarea.value.trim();
       if (!selectedText) {
-        alert('Prosím, označte promo kód v poli výše.');
+        alert('Prosím, vyberte nebo upravte promo kód.');
         return;
       }
-
       const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
       window.open(`https://store.pokemongo.com/offer-redemption?passcode=${code}`, '_blank');
     });
