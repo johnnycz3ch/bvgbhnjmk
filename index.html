@@ -2,109 +2,93 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>OCR promo kód s ořezem</title>
-  <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet"/>
+  <title>OCR promo kód s OCR.space API</title>
   <style>
-    #image-container { max-width: 100%; max-height: 400px; margin-top: 10px; }
-    #image { max-width: 100%; }
     #recognized-text { width: 90%; margin-top: 10px; }
-    #crop-button, #ocr-button { margin-top: 10px; }
+    #result { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h2>Nahrajte fotku promo kódu a ořízněte jej</h2>
-  <input type="file" id="file-input" accept="image/*" capture="environment"/>
-  <div id="image-container">
-    <img id="image" style="display:none;" />
+  <h2>Nahrajte fotku promo kódu</h2>
+  <input type="file" id="file-input" accept="image/*" capture="environment" />
+  <button id="upload-button" disabled>Nahrát a přečíst kód</button>
+
+  <div id="result">
+    <textarea id="recognized-text" rows="4" placeholder="Zde se zobrazí rozpoznaný promo kód..."></textarea><br />
+    <button id="use-code" disabled>Použít označený kód</button>
   </div>
-  <button id="crop-button" disabled>Oříznout vybranou oblast</button>
-  <button id="ocr-button" disabled>Přečíst z oříznutí</button>
-  <br/>
-  <textarea id="recognized-text" rows="4" placeholder="Zde se zobrazí rozpoznaný promo kód..."></textarea>
 
-  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script>
-    const input = document.getElementById('file-input');
-    const image = document.getElementById('image');
-    const cropBtn = document.getElementById('crop-button');
-    const ocrBtn = document.getElementById('ocr-button');
+    const fileInput = document.getElementById('file-input');
+    const uploadButton = document.getElementById('upload-button');
     const textarea = document.getElementById('recognized-text');
+    const useCodeButton = document.getElementById('use-code');
 
-    let cropper;
-    let croppedCanvas;
+    let apiKey = 'K87964261688957'; // Zde vložte svůj OCR.space API klíč
 
-    input.addEventListener('change', () => {
-      const file = input.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      image.src = url;
-      image.style.display = 'block';
+    fileInput.addEventListener('change', () => {
+      uploadButton.disabled = !fileInput.files.length;
       textarea.value = '';
-      ocrBtn.disabled = true;
-      cropBtn.disabled = false;
-
-      if (cropper) {
-        cropper.destroy();
-      }
-      cropper = new Cropper(image, {
-        viewMode: 1,
-        aspectRatio: NaN,
-        autoCropArea: 0.5,
-      });
+      useCodeButton.disabled = true;
     });
 
-    cropBtn.addEventListener('click', () => {
-      if (!cropper) return;
-      croppedCanvas = cropper.getCroppedCanvas({
-        maxWidth: 800,
-        maxHeight: 200,
-      });
-      if (!croppedCanvas) {
-        alert('Nejdříve označte oblast k ořezu.');
-        return;
-      }
-      // Zobrazit výřez v místo původního obrázku, pokud chcete, jinak jen povolit OCR
-      image.style.display = 'none';
-      cropper.destroy();
-      cropper = null;
-      cropBtn.disabled = true;
-      ocrBtn.disabled = false;
-    });
+    function najdiPromoKody(text) {
+      const regex = /\b[A-Z0-9]{10,13}\b/g;
+      const matches = text.toUpperCase().match(regex);
+      if (!matches) return [];
+      return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
+    }
 
-    ocrBtn.addEventListener('click', () => {
-      if (!croppedCanvas) {
-        alert('Nejdříve ořízněte obrázek.');
+    uploadButton.addEventListener('click', () => {
+      if (!fileInput.files.length) {
+        alert('Vyberte obrázek');
         return;
       }
       textarea.value = 'Načítám...';
+      useCodeButton.disabled = true;
 
-      croppedCanvas.toBlob(blob => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          Tesseract.recognize(reader.result, 'eng', {
-            logger: m => console.log(m),
-            tessedit_pageseg_mode: 7  // jeden řádek
-          })
-          .then(({ data: { text } }) => {
-            // Vyfiltrujeme pravděpodobné promo kódy: 10-13 znaků, obsahují písm. i číslice
-            const regex = /\b[A-Z0-9]{10,13}\b/g;
-            const matches = text.toUpperCase().match(regex);
-            const promoKody = matches ? matches.filter(c => /[A-Z]/.test(c) && /\d/.test(c)) : [];
-            if (promoKody.length > 0) {
-              textarea.value = promoKody.join('\n');
-            } else {
-              textarea.value = text;
-              alert('Promo kód nebyl automaticky detekován, upravte jej ručně');
-            }
-          })
-          .catch(err => {
+      const formData = new FormData();
+      formData.append('apikey', apiKey);
+      formData.append('language', 'eng');
+      formData.append('file', fileInput.files[0]);
+      formData.append('isOverlayRequired', 'false');
+
+      fetch('https://api.ocr.space/parse/image', {
+        method: 'POST',
+        body: formData,
+      })
+        .then(response => response.json())
+        .then(result => {
+          if (result.IsErroredOnProcessing) {
             textarea.value = '';
-            alert('Chyba při OCR: ' + err.message);
-          });
-        };
-        reader.readAsDataURL(blob);
-      });
+            alert('Chyba při rozpoznávání: ' + result.ErrorMessage.join('; '));
+            return;
+          }
+          const text = result.ParsedResults?.[0]?.ParsedText || '';
+          const promoKody = najdiPromoKody(text);
+          if (promoKody.length > 0) {
+            textarea.value = promoKody.join('\n');
+            useCodeButton.disabled = false;
+          } else {
+            textarea.value = text;
+            alert('Promo kód nebyl automaticky nalezen, upravte jej ručně.');
+          }
+        })
+        .catch(err => {
+          textarea.value = '';
+          alert('Chyba při komunikaci s OCR službou: ' + err.message);
+        });
+    });
+
+    useCodeButton.addEventListener('click', () => {
+      let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+      if (!selectedText) selectedText = textarea.value.trim();
+      if (!selectedText) {
+        alert('Prosím, vyberte nebo upravte promo kód.');
+        return;
+      }
+      const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      window.open(`https://store.pokemongo.com/offer-redemption?passcode=${code}`, '_blank');
     });
   </script>
 </body>
