@@ -1,235 +1,304 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-  <meta charset="UTF-8" />
-  <title>PokéKlub.cz - OCR promo kód</title>
-  <style>
-    body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f8f9fa;
-      margin: 0; padding: 0;
-      color: #1e3259;
-    }
-    .ocr-container {
-      background: #fff;
-      max-width: 450px;
-      margin: 40px auto 30px;
-      border-radius: 20px;
-      box-shadow: 0 6px 24px rgba(28,38,78,0.15);
-      padding: 36px 30px 28px;
-      text-align: center;
-    }
-    .ocr-logo {
-      max-width: 120px;
-      margin: 0 auto 20px;
-      display: block;
-    }
-    .ocr-container h3 {
-      margin-bottom: 18px;
-      color: #1e3355;
-      font-weight: 700;
-      font-size: 1.35em;
-    }
-    #custom-photo-btn {
-      background: #ffca3a;
-      color: #171b23;
-      border: none;
-      border-radius: 20px;
-      padding: 14px 28px;
-      font-size: 1.1em;
-      font-weight: 700;
-      margin-bottom: 15px;
-      cursor: pointer;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-      transition: background 0.3s ease;
-    }
-    #custom-photo-btn:hover {
-      background: #ffd86b;
-    }
-    #use-code {
-      background: #347bd3;
-      color: #fff;
-      border: none;
-      border-radius: 18px;
-      padding: 14px 28px;
-      font-size: 1.1em;
-      margin-top: 20px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(52,123,211,0.6);
-      transition: background 0.3s ease;
-      width: 100%;
-    }
-    #use-code:disabled {
-      background: #acb9c6;
-      cursor: default;
-      box-shadow: none;
-    }
-    #recognized-text {
-      border-radius: 12px;
-      margin: 18px 0 0 0;
-      width: 100%;
-      padding: 14px;
-      font-size: 1.1em;
-      border: 1px solid #dee2ef;
-      background: #f3f7fb;
-      color: #1e3259;
-      resize: none;
-      height: 80px;
-      box-sizing: border-box;
-      font-weight: 600;
-    }
-    #error-message {
-      color: #cb382e;
-      font-size: 1.1em;
-      margin-bottom: 15px;
-      min-height: 28px;
-      font-weight: 700;
-      letter-spacing: 0.1px;
-    }
-    #file-input {
-      display: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="ocr-container">
-    <img src="https://5812dfe6d0.clvaw-cdnwnd.com/da81e5c5e3c69a759d0f864821490953/200000294-e06eae06ec/700/LOGObezpozadi.webp?ph=5812dfe6d0" alt="PokéKlub.cz Logo" class="ocr-logo" />
-    <h3>Načtěte svůj promo kód</h3>
-    <div id="error-message"></div>
-    <button id="custom-photo-btn" type="button">📸 Vyfotit promo kód</button>
-    <input type="file" id="file-input" accept="image/*" capture="environment" />
-
-    <textarea id="recognized-text" placeholder="Zde se zobrazí promo kód..." readonly></textarea><br />
-    <button id="use-code" disabled>Použít kód</button>
+<div class="ocr-container">
+  <img src="https://5812dfe6d0.clvaw-cdnwnd.com/da81e5c5e3c69a759d0f864821490953/200000294-e06eae06ec/700/LOGObezpozadi.webp?ph=5812dfe6d0" alt="PokéKlub.cz Logo" class="ocr-logo" />
+  <h3>Načtěte svůj promo kód</h3>
+  
+  <!-- Tlačítko nápovědy hned pod nadpisem -->
+  <button id="pkn-help-toggle" class="pkn-help-button">Nápověda</button>
+  <div id="pkn-help-text" class="pkn-help-text" style="display:none;">
+    <ul>
+      <li>
+        Klikněte na tlačítko 📸 <b>Vyfotit promo kód</b>.
+      </li>
+      <li>
+        Nahrajte fotku promo kódu na web. Po zpracování se otevře Pokémon GO Web Store, kde bude váš kód již vyplněný.
+      </li>
+      <li>
+        <b>Při prvním použití povolte zobrazení vyskakovacího okna (viz obr.):</b>
+        <br>
+        <img src="https://5812dfe6d0.clvaw-cdnwnd.com/da81e5c5e3c69a759d0f864821490953/200000321-354a6354a7/IMG_20250903_235809.webp?ph=5812dfe6d0"
+             alt="Povolení okna" style="max-width:260px;margin:12px auto;display:block;border-radius:9px;box-shadow:0 2px 12px rgba(52,123,211,0.10);border:1px solid #dde6f0;">
+      </li>
+      <li>
+        Pokud nebudete automaticky přesměrováni na stránku pro zadání promo kódu, klikněte na tlačítko <b>Použít kód</b>.
+      </li>
+      <li>
+        Pokud jste na Web Store přihlášeni, stačí kliknout na <b>Apply</b>. (Doporučujeme kód překontrolovat, OCR může občas špatně načíst některé znaky.)
+      </li>
+      <li>
+        Pokud přihlášeni nejste, nejprve se přihlaste a pokračujte podle instrukcí výše.
+      </li>
+      <li>
+        Pokud se zobrazí více kódů v políčku <b>Zde se zobrazí promo kód</b>, označte ten správný (jako při výběru textu) a klikněte na <b>Použít kód</b>.
+      </li>
+    </ul>
+    <div class="pkn-help-divider"></div>
+    <div class="pkn-help-troubles">
+      <b>Tipy při potížích:</b>
+      <ul style="margin-top:8px;">
+        <li>Pokud není kód rozpoznán správně, zkuste nahrát kvalitnější fotku – jasná, ostrá, dobře čitelná na kontrastním pozadí.</li>
+        <li>Kód můžete upravit ručně přímo v poli pro promo kód.</li>
+        <li>Při technické chybě zkuste obnovit stránku nebo použijte jiný prohlížeč.</li>
+      </ul>
+    </div>
   </div>
 
-  <script>
-    const fileInput = document.getElementById('file-input');
-    const customPhotoBtn = document.getElementById('custom-photo-btn');
-    const textarea = document.getElementById('recognized-text');
-    const useCodeButton = document.getElementById('use-code');
-    const errorDiv = document.getElementById('error-message');
-    const apiKey = 'K87964261688957'; // Váš OCR.space API klíč
+  <div id="error-message"></div>
+  <button id="custom-photo-btn" type="button">📸 Vyfotit promo kód</button>
+  <input type="file" id="file-input" accept="image/*" capture="environment" />
 
-    customPhotoBtn.addEventListener('click', () => {
-      errorDiv.innerText = '';
-      fileInput.value = '';
-      fileInput.click();
-    });
+  <textarea id="recognized-text" placeholder="Zde se zobrazí promo kód..." readonly></textarea><br />
+  <button id="use-code" disabled>Použít kód</button>
+</div>
 
-    // HLÁŠKY JIŽ BEZ PREFIXU
-    function showMessage(msg) {
-      errorDiv.innerText = msg || '';
-    }
+<style>
+.pkn-help-button {
+  background: #347bd3;
+  color: #fff;
+  border: none;
+  border-radius: 18px;
+  padding: 12px 30px;
+  font-size: 1.13em;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 14px auto 14px auto;
+  box-shadow: 0 2px 10px rgba(52,123,211,0.09);
+  transition: background 0.2s;
+  display: block;
+}
+.pkn-help-button:hover { background: #5692e0; }
+.pkn-help-text {
+  max-width: 510px;
+  margin: 0 auto 12px;
+  text-align: left;
+  background: #f6f8fa;
+  padding: 18px 20px;
+  border-radius: 13px;
+  font-size: 1em;
+  color: #1e3259;
+  box-shadow: 0 2px 12px rgba(52,123,211,0.04);
+}
+.pkn-help-text ul {
+  margin: 0 0 10px 0;
+  padding-left: 18px;
+}
+.pkn-help-text li {
+  margin-bottom: 10px;
+  line-height: 1.55;
+}
+.pkn-help-divider {
+  height: 1px;
+  background: #d3dbe5;
+  margin: 12px 0;
+  border-radius: 2px;
+}
+.pkn-help-troubles {
+  font-size: 1em;
+  color: #2c354c;
+  padding-left: 2px;
+}
 
-    function najdiPromoKody(text) {
-      const regex = /\b[A-Z0-9]{10,13}\b/g;
-      const matches = text.toUpperCase().match(regex);
-      if (!matches) return [];
-      return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
-    }
+/* Skener promo kódů */
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f8f9fa;
+  color: #1e3259;
+}
+.ocr-container {
+  background: #fff;
+  max-width: 510px;
+  margin: 34px auto 32px;
+  border-radius: 20px;
+  box-shadow: 0 6px 24px rgba(28,38,78,0.15);
+  padding: 30px 28px 26px;
+  text-align: center;
+}
+.ocr-logo {
+  max-width: 120px;
+  margin: 0 auto 16px;
+  display: block;
+}
+.ocr-container h3 {
+  margin-bottom: 18px;
+  color: #1e3355;
+  font-weight: 700;
+  font-size: 1.25em;
+}
+#error-message {
+  color: #cb382e;
+  font-size: 1.09em;
+  margin-bottom: 15px;
+  min-height: 27px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+#custom-photo-btn {
+  background: #ffca3a;
+  color: #171b23;
+  border: none;
+  border-radius: 16px;
+  padding: 13px 25px;
+  font-size: 1.1em;
+  font-weight: 700;
+  margin-bottom: 13px;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.11);
+  transition: background 0.2s;
+}
+#custom-photo-btn:hover { background: #ffd86b; }
+#use-code {
+  background: #347bd3;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 13px 22px;
+  font-size: 1.09em;
+  margin-top: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(52,123,211,0.12);
+  transition: background 0.2s;
+  width: 99%;
+}
+#use-code:disabled { background: #acb9c6; cursor: default; box-shadow: none; }
+#recognized-text {
+  border-radius: 11px;
+  margin: 16px 0 0 0;
+  width: 99%;
+  padding: 12px;
+  font-size: 1em;
+  border: 1px solid #dee2ef;
+  background: #f3f7fb;
+  color: #1e3259;
+  resize: none;
+  height: 80px;
+  box-sizing: border-box;
+  font-weight: 600;
+}
+#file-input { display: none; }
+</style>
 
-    function compressResizeImage(file, maxSizeMB, callback) {
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = new Image();
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          let quality = 0.9;
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+<script>
+/* Nápověda */
+document.getElementById('pkn-help-toggle').addEventListener('click', function() {
+  var helpText = document.getElementById('pkn-help-text');
+  helpText.style.display = (helpText.style.display === 'none' || helpText.style.display === '') ? 'block' : 'none';
+});
 
-          function attemptCompress() {
-            canvas.width = width;
-            canvas.height = height;
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-            canvas.toBlob(blob => {
-              if (blob.size <= maxSizeBytes || (quality < 0.3 && width < 300)) {
-                callback(blob);
-              } else {
-                quality -= 0.1;
-                if (quality < 0.5) {
-                  width = Math.floor(width * 0.9);
-                  height = Math.floor(height * 0.9);
-                  quality = 0.9;
-                }
-                attemptCompress();
-              }
-            }, 'image/jpeg', quality);
+/* Skener promo kódů */
+const fileInput = document.getElementById('file-input');
+const customPhotoBtn = document.getElementById('custom-photo-btn');
+const textarea = document.getElementById('recognized-text');
+const useCodeButton = document.getElementById('use-code');
+const errorDiv = document.getElementById('error-message');
+const apiKey = 'K87964261688957'; // Váš OCR.space API klíč
+
+customPhotoBtn.addEventListener('click', () => {
+  errorDiv.innerText = '';
+  fileInput.value = '';
+  fileInput.click();
+});
+function showMessage(msg) {
+  errorDiv.innerText = msg || '';
+}
+function najdiPromoKody(text) {
+  const regex = /\b[A-Z0-9]{10,13}\b/g;
+  const matches = text.toUpperCase().match(regex);
+  if (!matches) return [];
+  return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
+}
+function compressResizeImage(file, maxSizeMB, callback) {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      let quality = 0.9;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      function attemptCompress() {
+        canvas.width = width;
+        canvas.height = height;
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => {
+          if (blob.size <= maxSizeBytes || (quality < 0.3 && width < 300)) {
+            callback(blob);
+          } else {
+            quality -= 0.1;
+            if (quality < 0.5) {
+              width = Math.floor(width * 0.9);
+              height = Math.floor(height * 0.9);
+              quality = 0.9;
+            }
+            attemptCompress();
           }
-          attemptCompress();
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    fileInput.addEventListener('change', () => {
-      showMessage('');
-      if (!fileInput.files.length) {
+        }, 'image/jpeg', quality);
+      }
+      attemptCompress();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+fileInput.addEventListener('change', () => {
+  showMessage('');
+  if (!fileInput.files.length) {
+    textarea.value = '';
+    useCodeButton.disabled = true;
+    return;
+  }
+  textarea.value = 'Načítám...';
+  useCodeButton.disabled = true;
+  compressResizeImage(fileInput.files[0], 0.999, resizedBlob => {
+    const formData = new FormData();
+    formData.append('apikey', apiKey);
+    formData.append('language', 'eng');
+    formData.append('file', resizedBlob, 'image.jpg');
+    formData.append('isOverlayRequired', 'false');
+    fetch('https://api.ocr.space/parse/image', { method: 'POST', body: formData })
+      .then(response => response.json())
+      .then(result => {
+        if (result.IsErroredOnProcessing) {
+          textarea.value = '';
+          showMessage(result.ErrorMessage.join('; ') || 'Chyba při rozpoznávání. Zkuste to prosím znovu.');
+          return;
+        }
+        const text = result.ParsedResults?.[0]?.ParsedText || '';
+        const promoKody = najdiPromoKody(text);
+        if (promoKody.length > 0) {
+          textarea.value = promoKody.join('\n');
+          useCodeButton.disabled = false;
+          if (promoKody.length === 1) {
+            showMessage('Automaticky jste rozpoznali promo kód, stránka pro jeho zadání se otevře v nové záložce.');
+            setTimeout(() => {
+              showMessage('');
+              const url = `https://store.pokemongo.com/offer-redemption?passcode=${promoKody[0]}`;
+              window.open(url, "_blank");
+            }, 1800);
+          } else {
+            showMessage('');
+          }
+        } else {
+          textarea.value = text;
+          showMessage('promo kód nebyl automaticky nalezen.');
+        }
+      })
+      .catch(err => {
         textarea.value = '';
-        useCodeButton.disabled = true;
-        return;
-      }
-      textarea.value = 'Načítám...';
-      useCodeButton.disabled = true;
-
-      compressResizeImage(fileInput.files[0], 0.999, resizedBlob => {
-        const formData = new FormData();
-        formData.append('apikey', apiKey);
-        formData.append('language', 'eng');
-        formData.append('file', resizedBlob, 'image.jpg');
-        formData.append('isOverlayRequired', 'false');
-
-        fetch('https://api.ocr.space/parse/image', { method: 'POST', body: formData })
-          .then(response => response.json())
-          .then(result => {
-            if (result.IsErroredOnProcessing) {
-              textarea.value = '';
-              showMessage(result.ErrorMessage.join('; ') || 'Chyba při rozpoznávání. Zkuste to prosím znovu.');
-              return;
-            }
-            const text = result.ParsedResults?.[0]?.ParsedText || '';
-            const promoKody = najdiPromoKody(text);
-            if (promoKody.length > 0) {
-              textarea.value = promoKody.join('\n');
-              useCodeButton.disabled = false;
-              if (promoKody.length === 1) {
-                showMessage('Automaticky jste rozpoznali promo kód, budete přesměrováni na stránku pro jeho zadání.');
-                setTimeout(() => {
-                  showMessage('');
-                  const url = `https://store.pokemongo.com/offer-redemption?passcode=${promoKody[0]}`;
-                  window.location.href = url;
-                }, 1800);
-              } else {
-                showMessage('');
-              }
-            } else {
-              textarea.value = text;
-              showMessage('promo kód nebyl automaticky nalezen.');
-            }
-          })
-          .catch(err => {
-            textarea.value = '';
-            showMessage('Chyba při komunikaci s OCR službou: ' + err.message);
-          });
+        showMessage('Chyba při komunikaci s OCR službou: ' + err.message);
       });
-    });
-
-    useCodeButton.addEventListener('click', () => {
-      let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
-      if (!selectedText) selectedText = textarea.value.trim();
-      if (!selectedText) {
-        showMessage('Prosím, vyberte nebo upravte promo kód.');
-        return;
-      }
-      const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      window.location.href = `https://store.pokemongo.com/offer-redemption?passcode=${code}`;
-    });
-  </script>
-</body>
-</html>
+  });
+});
+useCodeButton.addEventListener('click', () => {
+  let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+  if (!selectedText) selectedText = textarea.value.trim();
+  if (!selectedText) {
+    showMessage('Prosím, vyberte nebo upravte promo kód.');
+    return;
+  }
+  const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+  window.open(`https://store.pokemongo.com/offer-redemption?passcode=${code}`, "_blank");
+});
+</script>
