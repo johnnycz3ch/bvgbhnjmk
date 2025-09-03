@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>OCR promo kód s automatickým rozpoznáním</title>
+  <title>OCR promo kód s automatickým přesměrováním</title>
   <style>
     #recognized-text { width: 90%; margin-top: 10px; }
     #result { margin-top: 20px; }
@@ -21,8 +21,7 @@
     const fileInput = document.getElementById('file-input');
     const textarea = document.getElementById('recognized-text');
     const useCodeButton = document.getElementById('use-code');
-
-    const apiKey = 'K87964261688957'; // Váš OCR.space API klíč
+    let apiKey = 'K87964261688957'; // Váš OCR.space API klíč
 
     function najdiPromoKody(text) {
       const regex = /\b[A-Z0-9]{10,13}\b/g;
@@ -102,7 +101,7 @@
               useCodeButton.disabled = false;
               if (promoKody.length === 1) {
                 const url = `https://store.pokemongo.com/offer-redemption?passcode=${promoKody[0]}`;
-                window.open(url, '_blank');
+                window.location.href = url; // Přesměrování v aktuální kartě
               }
             } else {
               textarea.value = text;
@@ -124,7 +123,7 @@
         return;
       }
       const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      window.open(`https://store.pokemongo.com/offer-redemption?passcode=${code}`, '_blank');
+      window.location.href = `https://store.pokemongo.com/offer-redemption?passcode=${code}`; // Přesměrování ve stejné kartě
     });
   </script>
 </body>
