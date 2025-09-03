@@ -2,84 +2,109 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>OCR promo kód s Tesseract.js</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+  <title>OCR promo kód s ořezem</title>
+  <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet"/>
   <style>
-    #recognized-text { width: 90%; }
-    #result { margin-top: 20px; }
-    .instructions { font-size: 1em; margin-bottom: 1em; color: #222; }
+    #image-container { max-width: 100%; max-height: 400px; margin-top: 10px; }
+    #image { max-width: 100%; }
+    #recognized-text { width: 90%; margin-top: 10px; }
+    #crop-button, #ocr-button { margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h2>Nahrajte fotku promo kódu</h2>
-  <div class="instructions">
-    Ideálně nahrajte <b>ostrou a dobře svícenou</b> fotku, kde je pouze promo kód v jednom řádku (žádný další text ani zbytek karty).<br>
-    Pokud se promo kód nevyplní správně, můžete jej v poli níže upravit nebo ručně zkopírovat správný.
+  <h2>Nahrajte fotku promo kódu a ořízněte jej</h2>
+  <input type="file" id="file-input" accept="image/*" capture="environment"/>
+  <div id="image-container">
+    <img id="image" style="display:none;" />
   </div>
-  <form id="ocr-form">
-    <input type="file" id="image" accept="image/*" capture="environment" required />
-    <button type="submit">Přečti kód</button>
-  </form>
+  <button id="crop-button" disabled>Oříznout vybranou oblast</button>
+  <button id="ocr-button" disabled>Přečíst z oříznutí</button>
+  <br/>
+  <textarea id="recognized-text" rows="4" placeholder="Zde se zobrazí rozpoznaný promo kód..."></textarea>
 
-  <div id="result">
-    <textarea id="recognized-text" rows="3" placeholder="Zde se zobrazí nalezené promo kódy, případně upravte nebo zadejte ručně..."></textarea><br />
-    <button id="use-code" disabled>Použít označený kód</button>
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
   <script>
-    function najdiPromoKody(text) {
-      // Všechny 10–13 znakové sekvence, minimálně jedno písmeno a jedna číslice
-      const regex = /\b[A-Z0-9]{10,13}\b/g;
-      const matches = text.toUpperCase().match(regex);
-      if (!matches) return [];
-      return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
-    }
+    const input = document.getElementById('file-input');
+    const image = document.getElementById('image');
+    const cropBtn = document.getElementById('crop-button');
+    const ocrBtn = document.getElementById('ocr-button');
+    const textarea = document.getElementById('recognized-text');
 
-    document.getElementById('ocr-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-      const file = document.getElementById('image').files[0];
-      if (!file) {
-        alert('Vyberte obrázek');
-        return;
+    let cropper;
+    let croppedCanvas;
+
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      image.src = url;
+      image.style.display = 'block';
+      textarea.value = '';
+      ocrBtn.disabled = true;
+      cropBtn.disabled = false;
+
+      if (cropper) {
+        cropper.destroy();
       }
-      const textarea = document.getElementById('recognized-text');
-      textarea.value = 'Načítám...';
-      document.getElementById('use-code').disabled = true;
-
-      const reader = new FileReader();
-      reader.onload = function () {
-        Tesseract.recognize(reader.result, 'eng', {
-          logger: m => console.log(m),
-          tessedit_pageseg_mode: 7 // Režim: jeden řádek textu
-        })
-        .then(({ data: { text } }) => {
-          const promoKody = najdiPromoKody(text);
-          if (promoKody.length > 0) {
-            textarea.value = promoKody.join('\n');
-            document.getElementById('use-code').disabled = false;
-          } else {
-            textarea.value = text;
-            alert('Automaticky se nepodařilo najít promo kód – zkontrolujte a případně upravte ručně.');
-          }
-        })
-        .catch((err) => {
-          textarea.value = '';
-          alert('Chyba při rozpoznávání textu: ' + err.message);
-        });
-      };
-      reader.readAsDataURL(file);
+      cropper = new Cropper(image, {
+        viewMode: 1,
+        aspectRatio: NaN,
+        autoCropArea: 0.5,
+      });
     });
 
-    document.getElementById('use-code').addEventListener('click', function () {
-      const textarea = document.getElementById('recognized-text');
-      let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
-      if (!selectedText) selectedText = textarea.value.trim();
-      if (!selectedText) {
-        alert('Prosím, vyberte nebo upravte promo kód.');
+    cropBtn.addEventListener('click', () => {
+      if (!cropper) return;
+      croppedCanvas = cropper.getCroppedCanvas({
+        maxWidth: 800,
+        maxHeight: 200,
+      });
+      if (!croppedCanvas) {
+        alert('Nejdříve označte oblast k ořezu.');
         return;
       }
-      const code = selectedText.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      window.open(`https://store.pokemongo.com/offer-redemption?passcode=${code}`, '_blank');
+      // Zobrazit výřez v místo původního obrázku, pokud chcete, jinak jen povolit OCR
+      image.style.display = 'none';
+      cropper.destroy();
+      cropper = null;
+      cropBtn.disabled = true;
+      ocrBtn.disabled = false;
+    });
+
+    ocrBtn.addEventListener('click', () => {
+      if (!croppedCanvas) {
+        alert('Nejdříve ořízněte obrázek.');
+        return;
+      }
+      textarea.value = 'Načítám...';
+
+      croppedCanvas.toBlob(blob => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          Tesseract.recognize(reader.result, 'eng', {
+            logger: m => console.log(m),
+            tessedit_pageseg_mode: 7  // jeden řádek
+          })
+          .then(({ data: { text } }) => {
+            // Vyfiltrujeme pravděpodobné promo kódy: 10-13 znaků, obsahují písm. i číslice
+            const regex = /\b[A-Z0-9]{10,13}\b/g;
+            const matches = text.toUpperCase().match(regex);
+            const promoKody = matches ? matches.filter(c => /[A-Z]/.test(c) && /\d/.test(c)) : [];
+            if (promoKody.length > 0) {
+              textarea.value = promoKody.join('\n');
+            } else {
+              textarea.value = text;
+              alert('Promo kód nebyl automaticky detekován, upravte jej ručně');
+            }
+          })
+          .catch(err => {
+            textarea.value = '';
+            alert('Chyba při OCR: ' + err.message);
+          });
+        };
+        reader.readAsDataURL(blob);
+      });
     });
   </script>
 </body>
