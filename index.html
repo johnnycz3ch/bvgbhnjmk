@@ -22,11 +22,13 @@
   </div>
 
   <script>
-    function findPromoCode(text) {
-      // Hledání nejpravděpodobnějšího promo kódu: 10-14 znaků A-Z nebo číslice
-      const regex = /\b[A-Z0-9]{10,14}\b/g;
+    function najdiPromoKod(text) {
+      // Vzor: 10–13 znaků, minimálně jedno písmeno, žádná mezera
+      const regex = /\b[A-Z0-9]{10,13}\b/g;
       const matches = text.toUpperCase().match(regex);
-      return matches ? matches[0] : null;
+      if (!matches) return null;
+      // Vrátí první řetězec, který obsahuje alespoň jedno písmeno
+      return matches.find(code => /[A-Z]/.test(code)) || null;
     }
 
     document.getElementById('ocr-form').addEventListener('submit', function(e) {
@@ -44,13 +46,13 @@
       reader.onload = function() {
         Tesseract.recognize(reader.result, 'eng', { logger: m => console.log(m) })
           .then(({ data: { text } }) => {
-            const promo = findPromoCode(text);
+            const promo = najdiPromoKod(text);
             if (promo) {
               textarea.value = promo;
               document.getElementById('use-code').disabled = false;
             } else {
-              textarea.value = text; // Zobrazit pro ruční výběr
-              alert('Automaticky se nepodařilo promo kód najít, prosím zkopírujte/vyberte jej ručně.');
+              textarea.value = text; // zobrazit celý text pro případný ruční výběr
+              alert('Automaticky se nepodařilo najít promo kód, vyberte jej prosím ručně.');
             }
           })
           .catch(err => {
@@ -63,7 +65,7 @@
 
     document.getElementById('use-code').addEventListener('click', function() {
       const textarea = document.getElementById('recognized-text');
-      // Pokud je něco vybráno, použijeme výběr, jinak celý obsah
+      // Pokud není vybrán text, použije celý obsah
       let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
       if (!selectedText) selectedText = textarea.value.trim();
       if (!selectedText) {
