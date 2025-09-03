@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>OCR promo kód s OCR.space API a dynamickým zmenšením obrázku</title>
+  <title>OCR promo kód s OCR.space API a limitem 999 KB</title>
   <style>
     #recognized-text { width: 90%; margin-top: 10px; }
     #result { margin-top: 20px; }
@@ -39,7 +39,7 @@
       return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
     }
 
-    // Dynamická komprese a škálování na <1MB
+    // Dynamická komprese a škálování na max 999KB (0.999 MB)
     function compressResizeImage(file, maxSizeMB, callback) {
       const maxSizeBytes = maxSizeMB * 1024 * 1024;
       const reader = new FileReader();
@@ -87,7 +87,7 @@
       textarea.value = 'Načítám...';
       useCodeButton.disabled = true;
 
-      compressResizeImage(fileInput.files[0], 1, resizedBlob => {
+      compressResizeImage(fileInput.files[0], 0.999, resizedBlob => {
         const formData = new FormData();
         formData.append('apikey', apiKey);
         formData.append('language', 'eng');
