@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>OCR promo kód s OCR.space API</title>
+  <title>OCR promo kód s OCR.space API a zmenšením obrázku</title>
   <style>
     #recognized-text { width: 90%; margin-top: 10px; }
     #result { margin-top: 20px; }
@@ -24,7 +24,7 @@
     const textarea = document.getElementById('recognized-text');
     const useCodeButton = document.getElementById('use-code');
 
-    let apiKey = 'K87964261688957'; // Zde vložte svůj OCR.space API klíč
+    let apiKey = 'K87964261688957'; // Vložte svůj OCR.space API klíč sem
 
     fileInput.addEventListener('change', () => {
       uploadButton.disabled = !fileInput.files.length;
@@ -39,6 +39,38 @@
       return matches.filter(code => /[A-Z]/.test(code) && /\d/.test(code));
     }
 
+    function resizeImage(file, maxSizeMB, callback) {
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Poměrné zmenšení rozměrů pokud překračuje limit
+          let scaleFactor = 1;
+          if (file.size > maxSizeBytes) {
+            scaleFactor = Math.sqrt(maxSizeBytes / file.size);
+            width = Math.floor(width * scaleFactor);
+            height = Math.floor(height * scaleFactor);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(function(blob) {
+            callback(blob);
+          }, 'image/jpeg', 0.8);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
     uploadButton.addEventListener('click', () => {
       if (!fileInput.files.length) {
         alert('Vyberte obrázek');
@@ -47,37 +79,39 @@
       textarea.value = 'Načítám...';
       useCodeButton.disabled = true;
 
-      const formData = new FormData();
-      formData.append('apikey', apiKey);
-      formData.append('language', 'eng');
-      formData.append('file', fileInput.files[0]);
-      formData.append('isOverlayRequired', 'false');
+      resizeImage(fileInput.files[0], 1, function(resizedBlob) {
+        const formData = new FormData();
+        formData.append('apikey', apiKey);
+        formData.append('language', 'eng');
+        formData.append('file', resizedBlob);
+        formData.append('isOverlayRequired', 'false');
 
-      fetch('https://api.ocr.space/parse/image', {
-        method: 'POST',
-        body: formData,
-      })
-        .then(response => response.json())
-        .then(result => {
-          if (result.IsErroredOnProcessing) {
-            textarea.value = '';
-            alert('Chyba při rozpoznávání: ' + result.ErrorMessage.join('; '));
-            return;
-          }
-          const text = result.ParsedResults?.[0]?.ParsedText || '';
-          const promoKody = najdiPromoKody(text);
-          if (promoKody.length > 0) {
-            textarea.value = promoKody.join('\n');
-            useCodeButton.disabled = false;
-          } else {
-            textarea.value = text;
-            alert('Promo kód nebyl automaticky nalezen, upravte jej ručně.');
-          }
+        fetch('https://api.ocr.space/parse/image', {
+          method: 'POST',
+          body: formData,
         })
-        .catch(err => {
-          textarea.value = '';
-          alert('Chyba při komunikaci s OCR službou: ' + err.message);
-        });
+          .then(response => response.json())
+          .then(result => {
+            if (result.IsErroredOnProcessing) {
+              textarea.value = '';
+              alert('Chyba při rozpoznávání: ' + result.ErrorMessage.join('; '));
+              return;
+            }
+            const text = result.ParsedResults?.[0]?.ParsedText || '';
+            const promoKody = najdiPromoKody(text);
+            if (promoKody.length > 0) {
+              textarea.value = promoKody.join('\n');
+              useCodeButton.disabled = false;
+            } else {
+              textarea.value = text;
+              alert('Promo kód nebyl automaticky nalezen, upravte jej ručně.');
+            }
+          })
+          .catch(err => {
+            textarea.value = '';
+            alert('Chyba při komunikaci s OCR službou: ' + err.message);
+          });
+      });
     });
 
     useCodeButton.addEventListener('click', () => {
